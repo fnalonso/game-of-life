@@ -30,7 +30,7 @@ pub struct Opt {
     #[structopt(long, default_value="15")]
     population: f32,
 
-    /// Refresh delay in miliseconds (The higher the faster)
+    /// Refresh delay in miliseconds (The higher the slower)
     #[structopt(short, long, default_value="100")]
     delay: u64,
 
