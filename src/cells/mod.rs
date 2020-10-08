@@ -1,11 +1,11 @@
 
-use rand;
+use rand::Rng;
 use std::rc::Rc;
 use std::cell::RefCell;
-use rand::Rng;
 
 use crate::terminal::Color;
 use crate::terminal;
+use rand::prelude::StdRng;
 
 
 struct Cell {
@@ -43,15 +43,28 @@ impl Cell {
 
 
 pub struct Cells {
+    generation: u64,
+    population: u64,
     cells: Vec<Vec<Rc<RefCell<Cell>>>>,
  }
 
 impl Cells {
+
+    /// Returns the current generation.
+    pub fn get_generation(&self) -> u64 {
+        self.generation
+    }
+
+    /// Returns the current population alive.
+    pub fn get_population(&self) -> &u64 {
+        &self.population
+    }
+
     /// Create a random population based on received parameters
     /// The `population_percentage` defines the percentage that will start alive
-    pub fn create_from_random(rows: i32, columns: i32, population_percentage: f32) -> Cells {
+    pub fn create_from_random(rows: i32, columns: i32, population_percentage: f32, seed: u64) -> Cells {
 
-        let mut randomizer = rand::thread_rng();
+        let mut randomizer: StdRng = rand::SeedableRng::seed_from_u64(seed);
         let mut cells = Vec::new();
             for i in 0..rows {
                 let mut cell_columns = Vec::new();
@@ -68,7 +81,7 @@ impl Cells {
                 }
             cells.push(cell_columns);
         }
-        Cells { cells }
+        Cells { generation: 1, population: 0, cells }
     }
 
     /// Create the population based on a layout file.
@@ -101,7 +114,7 @@ impl Cells {
             }
             cells.push(cell_columns);
         }
-        Cells { cells }
+        Cells { generation: 1, population: 0, cells }
     }
 
     /// Print the current state from each cell in the population
@@ -147,7 +160,8 @@ impl Cells {
     /// 2 - Update the `alive` state attribute
     ///
     ///
-    pub fn update_population(&self) {
+    pub fn update_population(&mut self) {
+        self.population = 0;
         for row in &self.cells {
             for cell in row {
                 let mut total_alive = 0;
@@ -162,16 +176,17 @@ impl Cells {
 
                 if current_state == true {
                     if total_alive == 2 || total_alive == 3 {
+                        self.population += 1;
                         alive = true;
                     }
                 } else {
                     if total_alive == 3 {
+                        self.population += 1;
                         alive = true
                     }
                 }
 
                 cell.borrow_mut().alive_next_generation = alive;
-
             }
         }
 
@@ -182,6 +197,8 @@ impl Cells {
 
             }
         }
+
+        self.generation += 1;
     }
 
     pub fn draw_cells(&self, padding: i32) {

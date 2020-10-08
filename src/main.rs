@@ -36,7 +36,15 @@ pub struct Opt {
 
     /// Layout file
     #[structopt(long)]
-    layout: Option<String>
+    layout: Option<String>,
+
+    /// Seed number
+    #[structopt(long)]
+    seed: u64,
+
+    /// Generations
+    #[structopt(long, default_value="0")]
+    generations: u64
 }
 
 
@@ -53,8 +61,7 @@ fn main() {
 
     let opts = Opt::from_args();
     let mut layout_data:Option<String> = None;
-    let cells;
-
+    let mut cells:Cells;
 
     if let Some(filename) = opts.layout{
         println!("Layout file {} received. Loading...", filename);
@@ -76,7 +83,7 @@ fn main() {
         },
         None => {
             cells = Cells::create_from_random(
-                opts.rows, opts.columns, opts.population
+                opts.rows, opts.columns, opts.population, opts.seed
             );
         }
     }
@@ -89,6 +96,12 @@ fn main() {
     loop {
         cells.draw_cells(opts.padding);
         cells.update_population();
+        if cells.get_generation() >= opts.generations {
+            terminal::reset();
+            println!("\n\nResult<(Seed: {}, Generation: {}, Population: {}>", opts.seed,
+                     cells.get_generation(), cells.get_population());
+            break
+        }
         println!();
         thread::sleep(Duration::from_millis(opts.delay))
     }
